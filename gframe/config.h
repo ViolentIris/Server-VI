@@ -7,8 +7,8 @@
 #define IRR_COMPILE_WITH_DX9_DEV_PACK
 #ifdef _WIN32
 
-#include <WinSock2.h>
 #define NOMINMAX
+#include <WinSock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
 
@@ -71,7 +71,6 @@ inline int myswprintf(wchar_t(&buf)[N], const wchar_t* fmt, TR... args) {
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
 #include <time.h>
 #include <thread>
 #include <mutex>
@@ -98,7 +97,7 @@ using namespace io;
 #endif
 
 extern const unsigned short PRO_VERSION;
-extern int enable_log;
+extern unsigned int enable_log;
 extern bool exit_on_return;
 extern bool open_file;
 extern wchar_t open_file_name[256];
