@@ -37,7 +37,7 @@ void DeckManager::LoadLFListSingle(const char* path) {
 			int count = -1;
 			if (sscanf(linebuf, "%d %d", &code, &count) != 2)
 				continue;
-			if (code <= 0 || code > 99999999)
+			if (code <= 0 || code > 0xfffffff)
 				continue;
 			if (count < 0 || count > 2)
 				continue;
@@ -91,11 +91,11 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
 	if(!list)
 		return 0;
 	int dc = 0;
-	if(deck.main.size() < 40 || deck.main.size() > 60)
+	if(deck.main.size() < DECK_MIN_SIZE || deck.main.size() > DECK_MAX_SIZE)
 		return (DECKERROR_MAINCOUNT << 28) + deck.main.size();
-	if(deck.extra.size() > 15)
+	if(deck.extra.size() > EXTRA_MAX_SIZE)
 		return (DECKERROR_EXTRACOUNT << 28) + deck.extra.size();
-	if(deck.side.size() > 15)
+	if(deck.side.size() > SIDE_MAX_SIZE)
 		return (DECKERROR_SIDECOUNT << 28) + deck.side.size();
 	const int rule_map[6] = { AVAIL_OCG, AVAIL_TCG, AVAIL_SC, AVAIL_CUSTOM, AVAIL_OCGTCG, 0 };
 	int avail = rule_map[rule];
@@ -163,10 +163,10 @@ int DeckManager::LoadDeck(Deck& deck, int* dbuf, int mainc, int sidec, bool is_p
 			continue;
 		}
 		else if(cd.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK)) {
-			if(deck.extra.size() >= 15)
+			if(deck.extra.size() >= EXTRA_MAX_SIZE)
 				continue;
 			deck.extra.push_back(dataManager.GetCodePointer(code));
-		} else if(deck.main.size() < 60) {
+		} else if(deck.main.size() < DECK_MAX_SIZE) {
 			deck.main.push_back(dataManager.GetCodePointer(code));
 		}
 	}
@@ -178,7 +178,7 @@ int DeckManager::LoadDeck(Deck& deck, int* dbuf, int mainc, int sidec, bool is_p
 		}
 		if(cd.type & TYPE_TOKEN)
 			continue;
-		if(deck.side.size() < 15)
+		if(deck.side.size() < YGOPRO_MAX_SIDE)
 			deck.side.push_back(dataManager.GetCodePointer(code));
 	}
 	return errorcode;
@@ -194,17 +194,21 @@ bool DeckManager::LoadSide(Deck& deck, int* dbuf, int mainc, int sidec) {
 		pcount[deck.side[i]->first]++;
 	Deck ndeck;
 	LoadDeck(ndeck, dbuf, mainc, sidec);
+#ifndef YGOPRO_NO_SIDE_CHECK
 	if(ndeck.main.size() != deck.main.size() || ndeck.extra.size() != deck.extra.size())
 		return false;
+#endif
 	for(size_t i = 0; i < ndeck.main.size(); ++i)
 		ncount[ndeck.main[i]->first]++;
 	for(size_t i = 0; i < ndeck.extra.size(); ++i)
 		ncount[ndeck.extra[i]->first]++;
 	for(size_t i = 0; i < ndeck.side.size(); ++i)
 		ncount[ndeck.side[i]->first]++;
+#ifndef YGOPRO_NO_SIDE_CHECK
 	for(auto cdit = ncount.begin(); cdit != ncount.end(); ++cdit)
 		if(cdit->second != pcount[cdit->first])
 			return false;
+#endif
 	deck = ndeck;
 	return true;
 }
@@ -231,7 +235,7 @@ void DeckManager::GetCategoryPath(wchar_t* ret, int index, const wchar_t* text) 
 void DeckManager::GetDeckFile(wchar_t* ret, irr::gui::IGUIComboBox* cbCategory, irr::gui::IGUIComboBox* cbDeck) {
 	wchar_t filepath[256];
 	wchar_t catepath[256];
-	wchar_t* deckname = (wchar_t*)cbDeck->getItem(cbDeck->getSelected());
+	const wchar_t* deckname = cbDeck->getItem(cbDeck->getSelected());
 	if(deckname != NULL) {
 		GetCategoryPath(catepath, cbCategory->getSelected(), cbCategory->getText());
 		myswprintf(filepath, L"%ls/%ls.ydk", catepath, deckname);
@@ -252,7 +256,9 @@ bool DeckManager::LoadDeck(irr::gui::IGUIComboBox* cbCategory, irr::gui::IGUICom
 }
 FILE* DeckManager::OpenDeckFile(const wchar_t* file, const char* mode) {
 #ifdef WIN32
-	FILE* fp = _wfopen(file, (wchar_t*)mode);
+	wchar_t wmode[20]{};
+	BufferIO::CopyWStr(mode, wmode, sizeof(wmode) / sizeof(wchar_t));
+	FILE* fp = _wfopen(file, wmode);
 #else
 	char file2[256];
 	BufferIO::EncodeUTF8(file, file2);

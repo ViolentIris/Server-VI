@@ -25,7 +25,7 @@ namespace irr {
 #include "single_mode.h"
 #endif //YGOPRO_SERVER_MODE
 
-const unsigned short PRO_VERSION = 0x1360;
+const unsigned short PRO_VERSION = 0x1361;
 
 namespace ygo {
 
@@ -1780,7 +1780,7 @@ void Game::AddDebugMsg(const char* msg) {
 	}
 	if (enable_log & 0x2) {
 		char msgbuf[1040];
-		sprintf(msgbuf, "[Script Error]: %s", msg);
+		snprintf(msgbuf, sizeof msgbuf, "[Script Error]: %s", msg);
 		ErrorLog(msgbuf);
 	}
 #endif //YGOPRO_SERVER_MODE

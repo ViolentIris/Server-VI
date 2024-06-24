@@ -13,7 +13,11 @@
 #include <vector>
 #include <list>
 
-#define DEFAULT_DUEL_RULE 5
+#ifndef YGOPRO_DEFAULT_DUEL_RULE
+#define YGOPRO_DEFAULT_DUEL_RULE			5
+#endif
+
+#define DEFAULT_DUEL_RULE YGOPRO_DEFAULT_DUEL_RULE
 
 namespace ygo {
 
